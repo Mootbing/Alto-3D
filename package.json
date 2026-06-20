@@ -1,6 +1,6 @@
 {
   "name": "alto-3d-ascii",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Styled animated ASCII fallbacks for 3D models that fail to load.",
   "type": "module",
   "types": "./src/index.d.ts",
