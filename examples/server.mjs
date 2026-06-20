@@ -51,4 +51,5 @@ const server = createServer((request, response) => {
 server.listen(port, host, () => {
   console.log(`Alto-3D site: http://${host}:${port}/`);
   console.log(`Demo file: http://${host}:${port}/examples/demo.html`);
+  console.log(`Web demo: http://${host}:${port}/examples/game.html`);
 });

@@ -59,6 +59,22 @@ test("resolution presets adjust the generated grid size", () => {
   assert.ok(low.split("\n").length < high.split("\n").length);
 });
 
+test("maxColumns and maxRows allow demos to opt into higher detail", () => {
+  const defaultUltra = createAsciiModelFrame({ resolution: "4x" });
+  const liftedUltra = createAsciiModelFrame({
+    maxColumns: 360,
+    maxRows: 220,
+    resolution: "4x"
+  });
+  const defaultLines = defaultUltra.split("\n");
+  const liftedLines = liftedUltra.split("\n");
+
+  assert.ok(defaultLines[0].length < liftedLines[0].length);
+  assert.ok(defaultLines.length < liftedLines.length);
+  assert.equal(liftedLines[0].length, 296);
+  assert.equal(liftedLines.length, 152);
+});
+
 test("explicit columns and rows override resolution presets", () => {
   const ascii = createAsciiModelFrame({
     columns: 34,

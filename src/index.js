@@ -55,8 +55,8 @@ function resolutionScale(resolution) {
 
 function resolveAsciiDimensions(options = {}, defaults = {}) {
   const scale = resolutionScale(options.resolution);
-  const columnLimit = defaults.columnLimit || 180;
-  const rowLimit = defaults.rowLimit || 100;
+  const columnLimit = clampInteger(options.maxColumns ?? defaults.columnLimit, 16, 1200, defaults.columnLimit || 180);
+  const rowLimit = clampInteger(options.maxRows ?? defaults.rowLimit, 8, 800, defaults.rowLimit || 100);
   const defaultColumns = clamp(Math.round((defaults.columns || 74) * scale), 24, columnLimit);
   const defaultRows = clamp(Math.round((defaults.rows || 38) * scale), 12, rowLimit);
   const columns = clampInteger(options.columns, 16, columnLimit, defaultColumns);
@@ -352,9 +352,11 @@ export function drawAsciiToCanvas(canvas, ascii, options = {}) {
   const lines = String(ascii || "").split("\n");
   const rows = Math.max(1, lines.length);
   const columns = lines.reduce((longest, line) => Math.max(longest, line.length), 0) || 1;
+  const minimumFontSize = Number.parseFloat(options.minFontSize);
+  const minFontSize = Number.isFinite(minimumFontSize) ? clamp(minimumFontSize, 1, 24) : 5;
   const fontSize = clamp(
     Number.parseFloat(options.fontSize) || Math.min(height / (rows * 0.86), width / (columns * 0.58)),
-    5,
+    minFontSize,
     Number.parseFloat(options.maxFontSize) || 24
   );
   const lineHeight = fontSize * (Number.parseFloat(options.lineHeight) || 0.86);

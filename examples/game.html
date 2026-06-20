@@ -1,0 +1,1053 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Alto-3D Game Demo</title>
+    <link rel="stylesheet" href="../src/alto.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+        }
+      }
+    </script>
+    <style>
+      :root {
+        color-scheme: dark;
+        --panel: rgba(255, 255, 255, 0.94);
+        --text: #151922;
+        --muted: #667085;
+        --accent: #2367d1;
+        --good: #2d7d5f;
+        --warn: #d97706;
+        --danger: #e11d48;
+        --shadow: 0 1.1rem 2.8rem rgba(0, 0, 0, 0.28);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+      }
+
+      body {
+        overflow: hidden;
+        background: #090b10;
+        color: #ffffff;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      button,
+      input,
+      select {
+        cursor: pointer;
+        font: inherit;
+      }
+
+      #game-canvas {
+        position: fixed;
+        inset: 0;
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+
+      .demo-topbar {
+        position: fixed;
+        inset-block-start: 0.9rem;
+        inset-inline: 50%;
+        z-index: 5;
+        display: grid;
+        width: min(58rem, calc(100% - 1rem));
+        grid-template-columns: auto minmax(0, 1fr) auto auto auto auto;
+        align-items: center;
+        gap: 0.65rem;
+        min-height: 4.15rem;
+        padding: 0.65rem;
+        border: 1px solid rgba(33, 44, 67, 0.08);
+        border-radius: 999px;
+        background: var(--panel);
+        box-shadow: var(--shadow);
+        color: var(--text);
+        transform: translateX(-50%);
+        backdrop-filter: blur(16px);
+      }
+
+      .brand-chip {
+        display: inline-grid;
+        min-width: 2.7rem;
+        min-height: 2.7rem;
+        place-items: center;
+        border-radius: 999px;
+        background: #111827;
+        color: #ffffff;
+        font-size: 0.9rem;
+        font-weight: 700;
+      }
+
+      .status-copy {
+        min-width: 0;
+      }
+
+      .status-copy strong,
+      .status-copy span {
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .status-copy strong {
+        font-size: 0.95rem;
+        font-weight: 650;
+        line-height: 1.1;
+      }
+
+      .status-copy span {
+        color: var(--muted);
+        font-size: 0.8rem;
+      }
+
+      .score-pill {
+        display: inline-flex;
+        align-items: center;
+        min-height: 2.7rem;
+        padding: 0 0.85rem;
+        border-radius: 999px;
+        background: #f8fafc;
+        color: var(--text);
+        font-variant-numeric: tabular-nums;
+        font-weight: 650;
+        white-space: nowrap;
+      }
+
+      .alto-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+        min-height: 2.7rem;
+        padding: 0 0.55rem 0 0.85rem;
+        border: 0;
+        border-radius: 999px;
+        background: #f8fafc;
+        color: var(--text);
+        font-weight: 650;
+        white-space: nowrap;
+      }
+
+      .alto-toggle:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+
+      .switch-label {
+        line-height: 1;
+      }
+
+      .switch-track {
+        position: relative;
+        display: inline-block;
+        width: 2.65rem;
+        height: 1.45rem;
+        border-radius: 999px;
+        background: #111827;
+        box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.16);
+        transition: background 160ms ease;
+      }
+
+      .switch-thumb {
+        position: absolute;
+        inset-block-start: 0.18rem;
+        inset-inline-start: 0.18rem;
+        width: 1.09rem;
+        height: 1.09rem;
+        border-radius: 999px;
+        background: #ffffff;
+        box-shadow: 0 0.14rem 0.35rem rgba(15, 23, 42, 0.28);
+        transition: transform 160ms ease;
+      }
+
+      .alto-toggle[aria-checked="true"] .switch-track {
+        background: var(--accent);
+      }
+
+      .alto-toggle[aria-checked="true"] .switch-thumb {
+        transform: translateX(1.2rem);
+      }
+
+      .resolution-select {
+        min-height: 2.7rem;
+        min-width: 7rem;
+        border: 0;
+        border-radius: 999px;
+        background: #f8fafc;
+        color: var(--text);
+        font: inherit;
+        font-weight: 650;
+        padding: 0 2rem 0 0.85rem;
+      }
+
+      .resolution-select:disabled {
+        background: #e5e7eb;
+        color: var(--muted);
+        cursor: not-allowed;
+        opacity: 0.62;
+      }
+
+      .lod-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        min-height: 2.7rem;
+        padding: 0 0.8rem;
+        border-radius: 999px;
+        background: #f8fafc;
+        color: var(--text);
+        font-size: 0.88rem;
+        font-weight: 650;
+        white-space: nowrap;
+      }
+
+      .lod-toggle input {
+        width: 1rem;
+        height: 1rem;
+        margin: 0;
+        accent-color: var(--accent);
+      }
+
+      .hud {
+        position: fixed;
+        inset-inline: 1rem;
+        inset-block-end: 1rem;
+        z-index: 4;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 0.75rem;
+        pointer-events: none;
+      }
+
+      .hud-panel {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+        align-items: center;
+        max-width: min(100%, 34rem);
+        padding: 0.55rem;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-radius: 999px;
+        background: rgba(9, 11, 16, 0.62);
+        box-shadow: 0 0.7rem 1.8rem rgba(0, 0, 0, 0.24);
+        backdrop-filter: blur(14px);
+      }
+
+      .hud-pill {
+        min-height: 2.35rem;
+        padding: 0.45rem 0.8rem;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.12);
+        color: #f8fafc;
+        font-size: 0.84rem;
+        font-weight: 750;
+        white-space: nowrap;
+      }
+
+      .touch-controls {
+        display: none;
+        grid-template-columns: repeat(3, 2.8rem);
+        grid-template-rows: repeat(3, 2.8rem);
+        gap: 0.35rem;
+        pointer-events: auto;
+      }
+
+      .touch-controls button {
+        display: grid;
+        min-width: 2.8rem;
+        min-height: 2.8rem;
+        place-items: center;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.9);
+        color: #111827;
+        font-weight: 900;
+      }
+
+      .touch-controls [data-touch="forward"] {
+        grid-column: 2;
+        grid-row: 1;
+      }
+
+      .touch-controls [data-touch="left"] {
+        grid-column: 1;
+        grid-row: 2;
+      }
+
+      .touch-controls [data-touch="right"] {
+        grid-column: 3;
+        grid-row: 2;
+      }
+
+      .touch-controls [data-touch="back"] {
+        grid-column: 2;
+        grid-row: 3;
+      }
+
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+
+      @media (max-width: 820px) {
+        .demo-topbar {
+          grid-template-columns: auto minmax(0, 1fr);
+          border-radius: 28px;
+        }
+
+        .score-pill,
+        .lod-toggle,
+        .resolution-select,
+        .alto-toggle {
+          width: 100%;
+          justify-content: center;
+        }
+
+        .lod-toggle,
+        .resolution-select,
+        .alto-toggle {
+          grid-column: 1 / -1;
+        }
+
+        .touch-controls {
+          display: grid;
+        }
+
+        .hud {
+          align-items: end;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="game-canvas" aria-label="Alto-3D archive runner game"></canvas>
+
+    <div class="demo-topbar" role="region" aria-label="Alto-3D game controls">
+      <span class="brand-chip" aria-hidden="true">3D</span>
+      <span class="status-copy">
+        <strong>Archive runner</strong>
+        <span id="texture-status">Waiting for missing texture...</span>
+      </span>
+      <span class="score-pill" id="score-pill">0 / 8</span>
+      <select class="resolution-select" id="resolution-select" aria-label="Alto-3D texture resolution">
+        <option value="0.5x">0.5x</option>
+        <option value="1x" selected>1x</option>
+        <option value="2x">2x</option>
+        <option value="3x">3x</option>
+        <option value="4x">4x</option>
+      </select>
+      <label class="lod-toggle" for="auto-lod-toggle">
+        <input id="auto-lod-toggle" type="checkbox" />
+        Auto LOD
+      </label>
+      <button class="alto-toggle" id="alto-toggle" type="button" role="switch" aria-checked="true" aria-label="Alto on">
+        <span class="switch-label">Alto</span>
+        <span class="switch-track" aria-hidden="true">
+          <span class="switch-thumb"></span>
+        </span>
+      </button>
+    </div>
+
+    <div class="hud" aria-hidden="true">
+      <div class="hud-panel">
+        <span class="hud-pill" id="time-pill">60.0</span>
+        <span class="hud-pill" id="speed-pill">speed 0</span>
+        <span class="hud-pill" id="gate-pill">texture pending</span>
+      </div>
+      <div class="touch-controls">
+        <button type="button" data-touch="forward" aria-label="Move forward">W</button>
+        <button type="button" data-touch="left" aria-label="Move left">A</button>
+        <button type="button" data-touch="right" aria-label="Move right">D</button>
+        <button type="button" data-touch="back" aria-label="Move back">S</button>
+      </div>
+    </div>
+
+    <script type="module">
+      import * as THREE from "three";
+      import { createAsciiModelFrame, drawAsciiToCanvas } from "../src/index.js";
+
+      const canvas = document.querySelector("#game-canvas");
+      const toggle = document.querySelector("#alto-toggle");
+      const autoLodToggle = document.querySelector("#auto-lod-toggle");
+      const resolutionSelect = document.querySelector("#resolution-select");
+      const textureStatus = document.querySelector("#texture-status");
+      const scorePill = document.querySelector("#score-pill");
+      const timePill = document.querySelector("#time-pill");
+      const speedPill = document.querySelector("#speed-pill");
+      const gatePill = document.querySelector("#gate-pill");
+      const renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        canvas,
+        preserveDrawingBuffer: true
+      });
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(48, 16 / 9, 0.1, 160);
+      const clock = new THREE.Clock();
+      const keys = new Set();
+      const touchKeys = new Map([
+        ["forward", "KeyW"],
+        ["left", "KeyA"],
+        ["right", "KeyD"],
+        ["back", "KeyS"]
+      ]);
+      const player = new THREE.Group();
+      const velocity = new THREE.Vector3();
+      const collectibles = [];
+      const arenaSize = 18;
+      const totalGlyphs = 8;
+      const altoTextureMaxColumns = 296;
+      const altoTextureMaxRows = 152;
+      const altoTextureWidth = 512;
+      const altoTextureHeight = 256;
+      const altoTextureFrameMs = 1000 / 24;
+      const missingTextureCanvas = document.createElement("canvas");
+      const errorTextureCanvas = document.createElement("canvas");
+      let altoEnabled = true;
+      let missingTextureFailed = false;
+      let collected = 0;
+      let remaining = 60;
+      let missingTexture = null;
+      let errorTexture = null;
+      let actualTorus = null;
+      let missingGate = null;
+      let missingMaterial = null;
+      let lastAltoTextureFrame = 0;
+      let manualResolution = resolutionSelect.value || "1x";
+      let activeResolution = manualResolution;
+
+      function selectedResolution() {
+        syncResolutionState();
+        return activeResolution;
+      }
+
+      function autoLodEnabled() {
+        return autoLodToggle.checked;
+      }
+
+      function gateDistance() {
+        return missingGate ? camera.position.distanceTo(missingGate.position) : 0;
+      }
+
+      function autoLodResolution() {
+        const distance = gateDistance();
+
+        if (distance < 12) {
+          return "4x";
+        }
+
+        if (distance < 18) {
+          return "3x";
+        }
+
+        if (distance < 25) {
+          return "2x";
+        }
+
+        if (distance < 34) {
+          return "1x";
+        }
+
+        return "0.5x";
+      }
+
+      function syncResolutionState() {
+        const autoLod = autoLodEnabled();
+        const nextResolution = autoLod ? autoLodResolution() : manualResolution;
+        const changed = activeResolution !== nextResolution;
+
+        activeResolution = nextResolution;
+        resolutionSelect.disabled = autoLod;
+        resolutionSelect.setAttribute("aria-disabled", String(autoLod));
+
+        if (resolutionSelect.value !== nextResolution) {
+          resolutionSelect.value = nextResolution;
+        }
+
+        return changed;
+      }
+
+      function updateTextureLabels() {
+        const resolution = selectedResolution();
+
+        if (autoLodEnabled()) {
+          textureStatus.textContent = `Auto LOD chose ${resolution} from ${gateDistance().toFixed(1)} units to the gate.`;
+          gatePill.textContent = `auto ${resolution}`;
+          return;
+        }
+
+        textureStatus.textContent = `Missing texture saved at ${resolution} detail on a fixed-size gate.`;
+        gatePill.textContent = `${resolution} detail`;
+      }
+
+      renderer.setClearColor(0x090b10, 1);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      scene.background = new THREE.Color(0x090b10);
+      scene.fog = new THREE.Fog(0x090b10, 18, 58);
+
+      camera.position.set(0, 8.5, 13);
+      camera.lookAt(0, 0, 0);
+
+      scene.add(new THREE.HemisphereLight(0xf6f8ff, 0x1b2433, 1.8));
+
+      const keyLight = new THREE.DirectionalLight(0xffffff, 2.2);
+      keyLight.position.set(5, 9, 7);
+      scene.add(keyLight);
+
+      const magentaLight = new THREE.PointLight(0xe11d48, 38, 28);
+      magentaLight.position.set(-7, 5, -5);
+      scene.add(magentaLight);
+
+      const cyanLight = new THREE.PointLight(0x2dd4bf, 30, 26);
+      cyanLight.position.set(8, 4, 6);
+      scene.add(cyanLight);
+
+      function makeCanvasTexture(width, height, draw) {
+        const textureCanvas = document.createElement("canvas");
+        const context = textureCanvas.getContext("2d");
+
+        textureCanvas.width = width;
+        textureCanvas.height = height;
+        draw(context, width, height);
+
+        const texture = new THREE.CanvasTexture(textureCanvas);
+        texture.colorSpace = THREE.SRGBColorSpace;
+        texture.anisotropy = 4;
+        return texture;
+      }
+
+      function createGridTexture() {
+        return makeCanvasTexture(512, 512, (context, width, height) => {
+          context.fillStyle = "#111827";
+          context.fillRect(0, 0, width, height);
+          context.strokeStyle = "rgba(255,255,255,0.13)";
+          context.lineWidth = 2;
+
+          for (let x = 0; x <= width; x += 64) {
+            context.beginPath();
+            context.moveTo(x, 0);
+            context.lineTo(x, height);
+            context.stroke();
+          }
+
+          for (let y = 0; y <= height; y += 64) {
+            context.beginPath();
+            context.moveTo(0, y);
+            context.lineTo(width, y);
+            context.stroke();
+          }
+
+          context.fillStyle = "rgba(45,125,95,0.22)";
+          context.fillRect(64, 64, 128, 128);
+          context.fillStyle = "rgba(217,119,6,0.18)";
+          context.fillRect(320, 256, 128, 192);
+        });
+      }
+
+      function createGlyphTexture(label, color) {
+        return makeCanvasTexture(256, 256, (context, width, height) => {
+          context.fillStyle = "#f8fafc";
+          context.fillRect(0, 0, width, height);
+          context.fillStyle = color;
+          context.fillRect(18, 18, width - 36, height - 36);
+          context.strokeStyle = "#111827";
+          context.lineWidth = 10;
+          context.strokeRect(28, 28, width - 56, height - 56);
+          context.fillStyle = "#ffffff";
+          context.font = "900 112px ui-monospace, Menlo, Consolas, monospace";
+          context.textAlign = "center";
+          context.textBaseline = "middle";
+          context.fillText(label, width / 2, height / 2 + 4);
+        });
+      }
+
+      function drawErrorTexture() {
+        const context = errorTextureCanvas.getContext("2d");
+
+        errorTextureCanvas.width = 512;
+        errorTextureCanvas.height = 256;
+        context.fillStyle = "#111827";
+        context.fillRect(0, 0, 512, 256);
+        context.fillStyle = "#e11d48";
+        context.fillRect(0, 0, 256, 128);
+        context.fillRect(256, 128, 256, 128);
+        context.fillStyle = "#f8fafc";
+        context.font = "900 42px ui-monospace, Menlo, Consolas, monospace";
+        context.textAlign = "center";
+        context.fillText("TEXTURE", 256, 98);
+        context.fillText("404", 256, 162);
+
+        if (!errorTexture) {
+          errorTexture = new THREE.CanvasTexture(errorTextureCanvas);
+          errorTexture.colorSpace = THREE.SRGBColorSpace;
+        }
+
+        errorTexture.needsUpdate = true;
+        return errorTexture;
+      }
+
+      function embedAsciiText(ascii, labels) {
+        const lines = ascii.split("\n").map((line) => line.split(""));
+        const startY = Math.max(1, Math.floor(lines.length / 2 - labels.length / 2));
+
+        labels.forEach((label, index) => {
+          const y = startY + index;
+          const x = Math.max(0, Math.floor((lines[y].length - label.length) / 2));
+
+          for (let i = 0; i < label.length && x + i < lines[y].length; i += 1) {
+            lines[y][x + i] = label[i];
+          }
+        });
+
+        return lines.map((line) => line.join("")).join("\n");
+      }
+
+      function drawAltoTexture(now = 0) {
+        const ascii = embedAsciiText(
+          createAsciiModelFrame({
+            maxColumns: altoTextureMaxColumns,
+            maxRows: altoTextureMaxRows,
+            model: "donut",
+            resolution: selectedResolution(),
+            rotationX: now * 0.0007,
+            rotationY: now * 0.0011
+          }),
+          ["ALTO-3D", "SAVED", "MISSING TEXTURE"]
+        );
+
+        missingTextureCanvas.width = altoTextureWidth;
+        missingTextureCanvas.height = altoTextureHeight;
+        drawAsciiToCanvas(missingTextureCanvas, ascii, {
+          color: "#f8fafc",
+          minFontSize: 1,
+          maxFontSize: 42,
+          shadowBlur: 5,
+          shadowColor: "rgba(255, 255, 255, 0.48)"
+        });
+
+        if (!missingTexture) {
+          missingTexture = new THREE.CanvasTexture(missingTextureCanvas);
+          missingTexture.colorSpace = THREE.SRGBColorSpace;
+        }
+
+        missingTexture.needsUpdate = true;
+        return missingTexture;
+      }
+
+      function updateAltoTexture(now, force = false) {
+        const resolutionChanged = syncResolutionState();
+
+        if (!force && !resolutionChanged && now - lastAltoTextureFrame < altoTextureFrameMs) {
+          return;
+        }
+
+        lastAltoTextureFrame = now;
+        missingMaterial.map = drawAltoTexture(now);
+        missingMaterial.needsUpdate = true;
+        updateTextureLabels();
+      }
+
+      function applyTextureMode() {
+        if (!missingMaterial) {
+          return;
+        }
+
+        if (altoEnabled && missingTextureFailed) {
+          actualTorus.visible = false;
+          updateAltoTexture(performance.now(), true);
+          missingMaterial.color.set(0xffffff);
+          missingMaterial.emissive.set(0x000000);
+          missingMaterial.emissiveIntensity = 0;
+          missingMaterial.opacity = 1;
+          updateTextureLabels();
+        } else if (missingTextureFailed) {
+          actualTorus.visible = true;
+          missingMaterial.map = null;
+          missingMaterial.color.set(0xffffff);
+          missingMaterial.emissive.set(0x000000);
+          missingMaterial.emissiveIntensity = 0;
+          missingMaterial.opacity = 0;
+          textureStatus.textContent = "Actual torus shown while Alto-3D is off.";
+          gatePill.textContent = "actual torus";
+        } else {
+          actualTorus.visible = false;
+          missingMaterial.map = drawErrorTexture();
+          missingMaterial.color.set(0xffffff);
+          missingMaterial.emissive.set(0x7f1d1d);
+          missingMaterial.emissiveIntensity = 0.28;
+          missingMaterial.opacity = 1;
+          textureStatus.textContent = missingTextureFailed ? "Missing texture shown raw." : "Waiting for missing texture...";
+          gatePill.textContent = missingTextureFailed ? "texture 404" : "texture pending";
+        }
+
+        missingMaterial.needsUpdate = true;
+        toggle.setAttribute("aria-checked", String(altoEnabled));
+        toggle.setAttribute("aria-label", altoEnabled ? "Alto on" : "Alto off");
+      }
+
+      function createWorld() {
+        const floorTexture = createGridTexture();
+        floorTexture.wrapS = THREE.RepeatWrapping;
+        floorTexture.wrapT = THREE.RepeatWrapping;
+        floorTexture.repeat.set(5, 5);
+
+        const floor = new THREE.Mesh(
+          new THREE.PlaneGeometry(42, 42),
+          new THREE.MeshStandardMaterial({
+            map: floorTexture,
+            metalness: 0.08,
+            roughness: 0.74
+          })
+        );
+        floor.rotation.x = -Math.PI / 2;
+        scene.add(floor);
+
+        const railMaterial = new THREE.MeshStandardMaterial({
+          color: 0x253044,
+          metalness: 0.12,
+          roughness: 0.62
+        });
+
+        [
+          [0, -arenaSize, 38, 0.45],
+          [0, arenaSize, 38, 0.45],
+          [-arenaSize, 0, 0.45, 38],
+          [arenaSize, 0, 0.45, 38]
+        ].forEach(([x, z, width, depth]) => {
+          const rail = new THREE.Mesh(new THREE.BoxGeometry(width, 0.9, depth), railMaterial);
+          rail.position.set(x, 0.45, z);
+          scene.add(rail);
+        });
+
+        const archiveMaterial = new THREE.MeshStandardMaterial({
+          color: 0x8b5cf6,
+          emissive: 0x1e1b4b,
+          metalness: 0.1,
+          roughness: 0.5
+        });
+
+        [
+          [-7, -3, 2.2, 1.2],
+          [-2, 5, 1.3, 3],
+          [6, 1, 1.6, 2.7],
+          [3, -7, 3.1, 1.1]
+        ].forEach(([x, z, width, depth]) => {
+          const stack = new THREE.Mesh(new THREE.BoxGeometry(width, 1.6, depth), archiveMaterial);
+          stack.position.set(x, 0.8, z);
+          scene.add(stack);
+        });
+
+        missingMaterial = new THREE.MeshStandardMaterial({
+          color: 0xffffff,
+          alphaTest: 0.02,
+          depthWrite: false,
+          map: drawErrorTexture(),
+          metalness: 0.05,
+          roughness: 0.48,
+          transparent: true
+        });
+        missingGate = new THREE.Mesh(new THREE.BoxGeometry(5.3, 2.9, 0.18), missingMaterial);
+        missingGate.position.set(0, 2.1, -12.4);
+        scene.add(missingGate);
+
+        actualTorus = new THREE.Mesh(
+          new THREE.TorusGeometry(0.95, 0.28, 36, 128),
+          new THREE.MeshStandardMaterial({
+            color: 0xf8fafc,
+            emissive: 0x134e4a,
+            emissiveIntensity: 0.65,
+            metalness: 0.2,
+            roughness: 0.34
+          })
+        );
+        actualTorus.position.set(0, 2.1, -11.88);
+        actualTorus.rotation.x = 0.18;
+        actualTorus.visible = false;
+        scene.add(actualTorus);
+
+        const gatePosts = new THREE.Mesh(
+          new THREE.BoxGeometry(6, 4.5, 0.18),
+          new THREE.MeshBasicMaterial({
+            color: 0x111827,
+            wireframe: true
+          })
+        );
+        gatePosts.position.copy(missingGate.position);
+        scene.add(gatePosts);
+
+        const playerBody = new THREE.Mesh(
+          new THREE.SphereGeometry(0.48, 32, 20),
+          new THREE.MeshStandardMaterial({
+            color: 0xf8fafc,
+            emissive: 0x102a44,
+            metalness: 0.18,
+            roughness: 0.38
+          })
+        );
+        const playerBand = new THREE.Mesh(
+          new THREE.TorusGeometry(0.54, 0.035, 10, 64),
+          new THREE.MeshStandardMaterial({
+            color: 0x2dd4bf,
+            emissive: 0x134e4a,
+            metalness: 0.1,
+            roughness: 0.4
+          })
+        );
+        playerBand.rotation.x = Math.PI / 2;
+        player.add(playerBody, playerBand);
+        player.position.set(0, 0.55, 8);
+        scene.add(player);
+
+        const glyphColors = ["#2367d1", "#2d7d5f", "#d97706", "#e11d48"];
+        const glyphMaterialMaps = ["A", "L", "T", "O"].map((letter, index) => createGlyphTexture(letter, glyphColors[index]));
+        const positions = [
+          [-8, 8],
+          [-4, -8],
+          [0, 4],
+          [5, 8],
+          [8, -5],
+          [-10, -2],
+          [10, 3],
+          [1, -10]
+        ];
+
+        positions.forEach(([x, z], index) => {
+          const glyph = new THREE.Mesh(
+            new THREE.BoxGeometry(0.75, 0.75, 0.14),
+            new THREE.MeshStandardMaterial({
+              color: 0xffffff,
+              emissive: 0x111827,
+              map: glyphMaterialMaps[index % glyphMaterialMaps.length],
+              metalness: 0.08,
+              roughness: 0.42
+            })
+          );
+          glyph.position.set(x, 0.85, z);
+          glyph.rotation.y = index * 0.7;
+          glyph.userData.active = true;
+          collectibles.push(glyph);
+          scene.add(glyph);
+        });
+      }
+
+      function requestMissingTexture() {
+        const loader = new THREE.TextureLoader();
+
+        loader.load(
+          "./assets/unavailable-archive-gate-texture.png",
+          (texture) => {
+            texture.colorSpace = THREE.SRGBColorSpace;
+            missingTextureFailed = false;
+            actualTorus.visible = false;
+            missingMaterial.map = texture;
+            missingMaterial.opacity = 1;
+            missingMaterial.needsUpdate = true;
+            textureStatus.textContent = "Gate texture loaded.";
+            gatePill.textContent = "texture loaded";
+          },
+          undefined,
+          () => {
+            missingTextureFailed = true;
+            applyTextureMode();
+          }
+        );
+      }
+
+      function updateHud() {
+        scorePill.textContent = `${collected} / ${totalGlyphs}`;
+        timePill.textContent = remaining.toFixed(1);
+        speedPill.textContent = `speed ${Math.round(velocity.length() * 10)}`;
+      }
+
+      function keyIsDown(...codes) {
+        return codes.some((code) => keys.has(code));
+      }
+
+      function updatePlayer(delta) {
+        const direction = new THREE.Vector3();
+
+        if (keyIsDown("KeyW", "ArrowUp")) {
+          direction.z -= 1;
+        }
+
+        if (keyIsDown("KeyS", "ArrowDown")) {
+          direction.z += 1;
+        }
+
+        if (keyIsDown("KeyA", "ArrowLeft")) {
+          direction.x -= 1;
+        }
+
+        if (keyIsDown("KeyD", "ArrowRight")) {
+          direction.x += 1;
+        }
+
+        if (direction.lengthSq() > 0) {
+          direction.normalize();
+          velocity.addScaledVector(direction, 8.5 * delta);
+        }
+
+        velocity.multiplyScalar(Math.pow(0.015, delta));
+        player.position.addScaledVector(velocity, delta);
+        player.position.x = THREE.MathUtils.clamp(player.position.x, -arenaSize + 1, arenaSize - 1);
+        player.position.z = THREE.MathUtils.clamp(player.position.z, -arenaSize + 1, arenaSize - 1);
+        player.rotation.z -= velocity.x * delta * 1.4;
+        player.rotation.x -= velocity.z * delta * 1.4;
+      }
+
+      function updateCollectibles(delta, elapsed) {
+        collectibles.forEach((glyph, index) => {
+          if (!glyph.userData.active) {
+            return;
+          }
+
+          glyph.rotation.y += delta * (1.2 + index * 0.05);
+          glyph.position.y = 0.85 + Math.sin(elapsed * 2 + index) * 0.12;
+
+          if (glyph.position.distanceTo(player.position) < 1.05) {
+            glyph.userData.active = false;
+            glyph.visible = false;
+            collected += 1;
+          }
+        });
+      }
+
+      function updateCamera(delta) {
+        const ideal = new THREE.Vector3(
+          player.position.x * 0.28,
+          8.5,
+          player.position.z + 10.5
+        );
+
+        camera.position.lerp(ideal, 1 - Math.pow(0.001, delta));
+        camera.lookAt(player.position.x * 0.18, 0.4, player.position.z - 3.5);
+      }
+
+      function resize() {
+        const width = Math.max(1, window.innerWidth);
+        const height = Math.max(1, window.innerHeight);
+
+        renderer.setSize(width, height, false);
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+      }
+
+      function animate(now) {
+        requestAnimationFrame(animate);
+
+        const delta = Math.min(clock.getDelta(), 0.05);
+        const elapsed = clock.elapsedTime;
+
+        remaining = Math.max(0, remaining - delta);
+        updatePlayer(delta);
+        updateCollectibles(delta, elapsed);
+        updateCamera(delta);
+
+        if (altoEnabled && missingTextureFailed) {
+          updateAltoTexture(now);
+        }
+
+        if (actualTorus?.visible) {
+          actualTorus.rotation.y += delta * 1.45;
+          actualTorus.rotation.z = Math.sin(now * 0.0012) * 0.18;
+        }
+
+        updateHud();
+        renderer.render(scene, camera);
+      }
+
+      window.addEventListener("keydown", (event) => {
+        keys.add(event.code);
+      });
+
+      window.addEventListener("keyup", (event) => {
+        keys.delete(event.code);
+      });
+
+      document.querySelectorAll("[data-touch]").forEach((button) => {
+        const code = touchKeys.get(button.dataset.touch);
+        const setPressed = (pressed) => {
+          if (pressed) {
+            keys.add(code);
+          } else {
+            keys.delete(code);
+          }
+        };
+
+        button.addEventListener("pointerdown", () => setPressed(true));
+        button.addEventListener("pointerup", () => setPressed(false));
+        button.addEventListener("pointercancel", () => setPressed(false));
+        button.addEventListener("pointerleave", () => setPressed(false));
+      });
+
+      toggle.addEventListener("click", () => {
+        altoEnabled = !altoEnabled;
+        applyTextureMode();
+      });
+
+      resolutionSelect.addEventListener("change", () => {
+        manualResolution = resolutionSelect.value || manualResolution;
+        syncResolutionState();
+
+        if (altoEnabled && missingTextureFailed) {
+          applyTextureMode();
+        }
+      });
+
+      autoLodToggle.addEventListener("change", () => {
+        syncResolutionState();
+
+        if (altoEnabled && missingTextureFailed) {
+          applyTextureMode();
+        }
+      });
+
+      window.addEventListener("resize", resize);
+
+      window.__alto3dGame = {
+        getState() {
+          return {
+            altoEnabled,
+            collected,
+            missingTextureFailed,
+            autoLod: autoLodEnabled(),
+            actualTorusVisible: Boolean(actualTorus?.visible),
+            gateDistance: Number(gateDistance().toFixed(2)),
+            textureCanvasHeight: missingTextureCanvas.height,
+            textureCanvasWidth: missingTextureCanvas.width,
+            playerX: Number(player.position.x.toFixed(3)),
+            playerZ: Number(player.position.z.toFixed(3)),
+            remaining: Number(remaining.toFixed(2)),
+            resolution: selectedResolution()
+          };
+        }
+      };
+
+      createWorld();
+      requestMissingTexture();
+      resize();
+      updateHud();
+      requestAnimationFrame(animate);
+    </script>
+  </body>
+</html>

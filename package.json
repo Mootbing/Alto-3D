@@ -35,8 +35,10 @@
     "./tailwind.css": "./src/tailwind.css"
   },
   "files": [
+    "agents",
     "examples",
     "index.html",
+    "SKILL.md",
     "src",
     "README.md",
     "LICENSE"
