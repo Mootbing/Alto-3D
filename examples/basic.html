@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Alto-3D ASCII demo</title>
+    <link rel="stylesheet" href="../src/alto.css" />
+    <style>
+      body {
+        display: grid;
+        gap: 1rem;
+        margin: 0;
+        min-height: 100vh;
+        place-content: center;
+        background: #f6f7fb;
+        color: #151922;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      main {
+        display: grid;
+        gap: 1rem;
+        width: min(48rem, calc(100vw - 2rem));
+      }
+
+      h1,
+      p {
+        margin: 0;
+      }
+
+      p {
+        color: #667085;
+        line-height: 1.55;
+      }
+
+      .demo-model,
+      .alto3d-fallback {
+        inline-size: 100%;
+        block-size: 20rem;
+      }
+
+      .demo-model {
+        border: 1px solid #d8dee8;
+        border-radius: 8px;
+        background: #111827;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Alto-3D ASCII demo</h1>
+      <p>Elements marked with <code>data-alto-3d</code> can be replaced when a model loader fails.</p>
+      <canvas
+        class="demo-model"
+        data-alto-3d
+        data-alto-3d-failed
+        aria-label="Broken torus model preview"
+      ></canvas>
+      <div id="direct-fallback"></div>
+    </main>
+
+    <script type="module">
+      import { createAlto3DFallback, installAlto3D } from "../src/index.js";
+
+      installAlto3D();
+
+      document.querySelector("#direct-fallback").append(
+        createAlto3DFallback("Satellite mesh fallback", {
+          model: "donut",
+          secondaryModel: "ring",
+          resolution: "high"
+        })
+      );
+    </script>
+  </body>
+</html>

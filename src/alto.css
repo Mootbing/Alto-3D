@@ -1,0 +1,65 @@
+.alto3d-fallback {
+  --alto3d-bg: hsl(220 22% 12%);
+  --alto3d-fg: hsl(48 88% 92%);
+  --alto3d-accent: hsl(180 80% 58%);
+  --alto3d-muted: hsl(220 16% 24%);
+  --alto3d-shadow: hsl(220 28% 6%);
+  --alto3d-radius: 0.5rem;
+  --alto3d-padding: 0.75rem;
+
+  box-sizing: border-box;
+  display: inline-grid;
+  place-items: center;
+  position: relative;
+  min-inline-size: 12rem;
+  min-block-size: 8rem;
+  overflow: hidden;
+  padding: var(--alto3d-padding);
+  border: 1px solid var(--alto3d-muted);
+  border-radius: var(--alto3d-radius);
+  background:
+    linear-gradient(135deg, transparent 0 42%, color-mix(in srgb, var(--alto3d-accent), transparent 82%) 42% 58%, transparent 58% 100%),
+    radial-gradient(circle at 22% 18%, color-mix(in srgb, var(--alto3d-accent), transparent 74%), transparent 27%),
+    linear-gradient(160deg, var(--alto3d-bg), var(--alto3d-shadow));
+  color: var(--alto3d-fg);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  line-height: 0.86;
+  text-align: center;
+  vertical-align: middle;
+  contain: content;
+  container-type: size;
+  isolation: isolate;
+}
+
+.alto3d-fallback__stage {
+  position: absolute;
+  inset: var(--alto3d-padding);
+  overflow: hidden;
+  border-radius: max(0px, calc(var(--alto3d-radius) - 0.25rem));
+  background: transparent;
+}
+
+.alto3d-fallback__canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  background: transparent;
+}
+
+.alto3d-fallback__canvas--primary {
+  opacity: 0.96;
+}
+
+.alto3d-fallback__canvas--secondary {
+  opacity: var(--alto3d-secondary-opacity, 0.5);
+}
+
+@supports not (background: color-mix(in srgb, black, white)) {
+  .alto3d-fallback {
+    background:
+      linear-gradient(135deg, transparent 0 42%, rgba(255, 255, 255, 0.08) 42% 58%, transparent 58% 100%),
+      linear-gradient(160deg, var(--alto3d-bg), var(--alto3d-shadow));
+  }
+}

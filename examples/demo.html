@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Alto-3D ASCII Demo</title>
+    <link rel="stylesheet" href="../src/alto.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
+    <style>
+      :root {
+        color-scheme: light;
+        --page: #f6f7fb;
+        --surface: #ffffff;
+        --surface-strong: #111827;
+        --text: #151922;
+        --muted: #667085;
+        --accent: #2367d1;
+        --shadow: 0 1.1rem 2.8rem rgba(25, 37, 67, 0.16);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        min-width: 320px;
+        margin: 0;
+        background:
+          linear-gradient(180deg, #ffffff 0, var(--page) 21rem),
+          var(--page);
+        color: var(--text);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      button,
+      input,
+      select {
+        font: inherit;
+      }
+
+      main {
+        display: grid;
+        gap: 1.2rem;
+        width: min(68rem, calc(100% - 2rem));
+        margin: 0 auto;
+        padding: 1.5rem 0 4rem;
+      }
+
+      .app-header,
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+      }
+
+      h1,
+      p {
+        margin: 0;
+      }
+
+      h1 {
+        font-size: clamp(2.1rem, 4vw, 3.8rem);
+        line-height: 0.98;
+        letter-spacing: 0;
+      }
+
+      p {
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+
+      .stage {
+        --ascii-opacity-position: 50%;
+
+        position: relative;
+        overflow: hidden;
+        min-height: 32rem;
+        border: 1px solid rgba(15, 23, 42, 0.14);
+        border-radius: 8px;
+        background:
+          linear-gradient(rgba(255, 255, 255, 0.055) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.055) 1px, transparent 1px),
+          radial-gradient(circle at 50% 45%, rgba(35, 103, 209, 0.2), transparent 35%),
+          var(--surface-strong);
+        background-size: 2.8rem 2.8rem, 2.8rem 2.8rem, auto, auto;
+        box-shadow: var(--shadow);
+        aspect-ratio: 16 / 9;
+      }
+
+      #model-canvas,
+      #ascii-backdrop,
+      #ascii-canvas,
+      #opacity-slider {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+
+      #model-canvas,
+      #ascii-canvas {
+        display: block;
+        background: transparent;
+      }
+
+      #ascii-backdrop {
+        z-index: 1;
+        background:
+          linear-gradient(rgba(255, 255, 255, 0.055) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.055) 1px, transparent 1px),
+          radial-gradient(circle at 50% 45%, rgba(35, 103, 209, 0.2), transparent 35%),
+          var(--surface-strong);
+        background-size: 2.8rem 2.8rem, 2.8rem 2.8rem, auto, auto;
+        opacity: 0.5;
+        pointer-events: none;
+      }
+
+      #ascii-canvas {
+        z-index: 2;
+        opacity: 0.5;
+        pointer-events: none;
+      }
+
+      .opacity-handle {
+        position: absolute;
+        inset-block: 0;
+        inset-inline-start: var(--ascii-opacity-position);
+        z-index: 3;
+        width: 0;
+        pointer-events: none;
+      }
+
+      .opacity-handle::before {
+        position: absolute;
+        inset-block: 1rem;
+        inset-inline-start: -1px;
+        width: 2px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.92);
+        box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.24), 0 0 1.4rem rgba(255, 255, 255, 0.52);
+        content: "";
+      }
+
+      .opacity-thumb {
+        position: absolute;
+        inset-block-start: 50%;
+        inset-inline-start: 0;
+        display: grid;
+        width: 3.4rem;
+        height: 3.4rem;
+        place-items: center;
+        border: 1px solid rgba(15, 23, 42, 0.18);
+        border-radius: 999px;
+        background: #ffffff;
+        box-shadow: 0 0.85rem 2rem rgba(0, 0, 0, 0.28);
+        color: var(--accent);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+        font-size: 1.05rem;
+        font-weight: 800;
+        transform: translate(-50%, -50%);
+      }
+
+      #opacity-slider {
+        z-index: 4;
+        opacity: 0;
+        cursor: ew-resize;
+      }
+
+      .controls {
+        padding: 0.65rem;
+        border-radius: 999px;
+        background: var(--surface);
+        box-shadow: var(--shadow);
+      }
+
+      input,
+      select,
+      button,
+      label {
+        min-height: 2.7rem;
+        border: 0;
+        border-radius: 999px;
+      }
+
+      label {
+        display: inline-grid;
+        place-items: center;
+        width: 2.7rem;
+        background: #111827;
+        color: #ffffff;
+        cursor: pointer;
+      }
+
+      label input {
+        position: absolute;
+        inline-size: 1px;
+        block-size: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        clip-path: inset(50%);
+        white-space: nowrap;
+      }
+
+      label svg,
+      button svg {
+        width: 1.1rem;
+        height: 1.1rem;
+        stroke-width: 2.4;
+      }
+
+      select {
+        background: #f8fafc;
+        color: var(--text);
+        padding: 0 2.25rem 0 1rem;
+      }
+
+      button {
+        display: inline-grid;
+        width: 2.7rem;
+        place-items: center;
+        background: #111827;
+        color: #ffffff;
+        padding: 0;
+      }
+
+      @media (max-width: 760px) {
+        main {
+          width: min(100% - 1rem, 68rem);
+        }
+
+        .controls {
+          border-radius: 28px;
+        }
+
+        label,
+        select,
+        button {
+          width: 100%;
+        }
+
+        .stage {
+          min-height: 22rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header class="app-header">
+        <h1>Alto-3D</h1>
+        <a href="https://www.npmjs.com/package/alto-3d-ascii">npm install alto-3d-ascii</a>
+      </header>
+      <p id="status" aria-live="polite">Default torus model active.</p>
+
+      <section class="stage" id="stage" aria-label="3D ASCII model preview">
+        <canvas id="model-canvas" data-alto-3d aria-label="3D model preview"></canvas>
+        <div id="ascii-backdrop" aria-hidden="true"></div>
+        <canvas id="ascii-canvas" aria-hidden="true"></canvas>
+        <div class="opacity-handle">
+          <span class="opacity-thumb" aria-hidden="true">50</span>
+        </div>
+        <input id="opacity-slider" type="range" min="0" max="100" value="50" aria-label="ASCII opacity" />
+      </section>
+
+      <form class="controls" id="controls">
+        <label aria-label="Upload FBX">
+          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <path d="M17 8 12 3 7 8"></path>
+            <path d="M12 3v12"></path>
+          </svg>
+          <input id="model-upload" type="file" accept=".fbx,model/fbx,application/octet-stream" />
+        </label>
+        <select id="resolution-input" aria-label="Resolution">
+          <option value="0.25x">0.25x</option>
+          <option value="0.5x">0.5x</option>
+          <option value="0.75x">0.75x</option>
+          <option value="1x" selected>1x</option>
+          <option value="1.5x">1.5x</option>
+          <option value="2x">2x</option>
+          <option value="3x">3x</option>
+          <option value="4x">4x</option>
+        </select>
+        <button type="submit" aria-label="Regenerate ASCII">
+          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12a9 9 0 1 1-2.64-6.36"></path>
+            <path d="M21 3v6h-6"></path>
+          </svg>
+        </button>
+      </form>
+    </main>
+
+    <script type="module">
+      import * as THREE from "three";
+      import { FBXLoader } from "three/addons/loaders/FBXLoader.js";
+      import { renderCanvasAsciiToCanvas } from "../src/index.js";
+
+      const asciiCanvas = document.querySelector("#ascii-canvas");
+      const asciiBackdrop = document.querySelector("#ascii-backdrop");
+      const controls = document.querySelector("#controls");
+      const modelCanvas = document.querySelector("#model-canvas");
+      const modelUpload = document.querySelector("#model-upload");
+      const opacitySlider = document.querySelector("#opacity-slider");
+      const resolutionInput = document.querySelector("#resolution-input");
+      const stage = document.querySelector("#stage");
+      const status = document.querySelector("#status");
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(35, 16 / 9, 0.01, 100);
+      const renderer = new THREE.WebGLRenderer({
+        alpha: true,
+        antialias: true,
+        canvas: modelCanvas,
+        preserveDrawingBuffer: true
+      });
+      const root = new THREE.Group();
+      const loader = new FBXLoader();
+      const scratchCanvas = document.createElement("canvas");
+      let activeModel = null;
+      let lastAsciiTime = 0;
+
+      renderer.setClearColor(0x000000, 0);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      camera.position.set(0, 0.35, 5.2);
+      scene.add(root);
+      scene.add(new THREE.HemisphereLight(0xffffff, 0x283044, 2.4));
+
+      const light = new THREE.DirectionalLight(0xffffff, 2.5);
+      light.position.set(3, 4, 5);
+      scene.add(light);
+
+      function clamp(value, min, max) {
+        return Math.min(max, Math.max(min, value));
+      }
+
+      function disposeObject(object) {
+        object.traverse?.((child) => {
+          child.geometry?.dispose?.();
+          if (Array.isArray(child.material)) {
+            child.material.forEach((material) => material.dispose?.());
+          } else {
+            child.material?.dispose?.();
+          }
+        });
+      }
+
+      function normalizeObject(object) {
+        const box = new THREE.Box3().setFromObject(object);
+        const size = box.getSize(new THREE.Vector3());
+        const center = box.getCenter(new THREE.Vector3());
+        const maxSize = Math.max(size.x, size.y, size.z, 0.001);
+
+        object.position.sub(center);
+        object.scale.multiplyScalar(2.5 / maxSize);
+        object.traverse((child) => {
+          if (child.isMesh) {
+            child.material ||= new THREE.MeshStandardMaterial({ color: 0xf7fbff, side: THREE.DoubleSide });
+          }
+        });
+      }
+
+      function setModel(object, name) {
+        if (activeModel) {
+          root.remove(activeModel);
+          disposeObject(activeModel);
+        }
+
+        activeModel = object;
+        normalizeObject(activeModel);
+        root.add(activeModel);
+        status.textContent = `${name} active.`;
+      }
+
+      function defaultModel() {
+        return new THREE.Mesh(
+          new THREE.TorusKnotGeometry(1, 0.32, 180, 28),
+          new THREE.MeshStandardMaterial({ color: 0xf7fbff, roughness: 0.55, metalness: 0.18 })
+        );
+      }
+
+      function resize() {
+        const rect = stage.getBoundingClientRect();
+        const width = Math.max(320, Math.round(rect.width));
+        const height = Math.max(220, Math.round(rect.height));
+
+        renderer.setSize(width, height, false);
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+      }
+
+      function setOpacity(value) {
+        const percent = clamp(Number.parseFloat(value) || 0, 0, 100);
+        const alpha = Number((percent / 100).toFixed(2));
+
+        stage.style.setProperty("--ascii-opacity-position", `${percent}%`);
+        asciiBackdrop.style.opacity = String(alpha);
+        asciiCanvas.style.opacity = String(alpha);
+        document.querySelector(".opacity-thumb").textContent = String(Math.round(percent));
+      }
+
+      function drawAscii(now = performance.now()) {
+        if (now - lastAsciiTime < 1000 / 18) {
+          return;
+        }
+
+        renderCanvasAsciiToCanvas(modelCanvas, asciiCanvas, {
+          color: "#f7fbff",
+          maxColumns: 260,
+          maxRows: 180,
+          resolution: resolutionInput.value,
+          scratchCanvas,
+          shadowBlur: 4,
+          shadowColor: "rgba(118, 228, 247, 0.6)"
+        });
+        lastAsciiTime = now;
+      }
+
+      function animate(now) {
+        requestAnimationFrame(animate);
+        activeModel.rotation.y += 0.011;
+        activeModel.rotation.x = Math.sin(now * 0.0004) * 0.16;
+        renderer.render(scene, camera);
+        drawAscii(now);
+      }
+
+      async function loadFbx(file) {
+        if (!file) {
+          return;
+        }
+
+        status.textContent = `Loading ${file.name}...`;
+
+        try {
+          const model = loader.parse(await file.arrayBuffer(), "");
+          setModel(model, file.name.replace(/\.fbx$/i, ""));
+        } catch (error) {
+          console.error(error);
+          status.textContent = "FBX load failed.";
+        }
+      }
+
+      controls.addEventListener("submit", (event) => {
+        event.preventDefault();
+        lastAsciiTime = 0;
+        drawAscii();
+      });
+      modelUpload.addEventListener("change", () => loadFbx(modelUpload.files?.[0]));
+      opacitySlider.addEventListener("input", () => setOpacity(opacitySlider.value));
+      resolutionInput.addEventListener("change", () => {
+        lastAsciiTime = 0;
+        drawAscii();
+      });
+      window.addEventListener("resize", () => {
+        resize();
+        lastAsciiTime = 0;
+      });
+
+      resize();
+      setOpacity(opacitySlider.value);
+      setModel(defaultModel(), "procedural torus");
+      requestAnimationFrame(animate);
+    </script>
+  </body>
+</html>

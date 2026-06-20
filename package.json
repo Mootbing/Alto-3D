@@ -1,0 +1,73 @@
+{
+  "name": "alto-3d-ascii",
+  "version": "0.1.0",
+  "description": "Styled animated ASCII fallbacks for 3D models that fail to load.",
+  "type": "module",
+  "types": "./src/index.d.ts",
+  "homepage": "https://mootbing.github.io/Alto-3D/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Mootbing/Alto-3D.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Mootbing/Alto-3D/issues"
+  },
+  "license": "MIT",
+  "author": "",
+  "sideEffects": [
+    "./src/alto.css",
+    "./src/tailwind.css"
+  ],
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "import": "./src/index.js"
+    },
+    "./next": {
+      "types": "./src/next.d.ts",
+      "import": "./src/next.js"
+    },
+    "./react": {
+      "types": "./src/react.d.ts",
+      "import": "./src/react.js"
+    },
+    "./style.css": "./src/alto.css",
+    "./tailwind.css": "./src/tailwind.css"
+  },
+  "files": [
+    "examples",
+    "index.html",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "demo": "node examples/server.mjs",
+    "test": "node --test",
+    "pack:check": "npm pack --dry-run"
+  },
+  "keywords": [
+    "3d",
+    "alt",
+    "ascii",
+    "fallback",
+    "model",
+    "threejs",
+    "webgl",
+    "nextjs",
+    "placeholder",
+    "tailwind",
+    "accessibility"
+  ],
+  "peerDependencies": {
+    "react": ">=18.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

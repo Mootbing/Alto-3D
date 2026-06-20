@@ -1,0 +1,1075 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Alto-3D</title>
+    <link rel="stylesheet" href="./src/alto.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
+    <style>
+      :root {
+        color-scheme: light;
+        --page: #f6f7fb;
+        --surface: #ffffff;
+        --surface-strong: #111827;
+        --text: #151922;
+        --muted: #667085;
+        --line: #d8dee8;
+        --accent: #2367d1;
+        --success: #2d7d5f;
+        --shadow: 0 1.1rem 2.8rem rgba(25, 37, 67, 0.16);
+        --soft-shadow: 0 0.7rem 1.6rem rgba(25, 37, 67, 0.1);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        min-width: 320px;
+        margin: 0;
+        background:
+          linear-gradient(180deg, #ffffff 0, var(--page) 21rem),
+          var(--page);
+        color: var(--text);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      button,
+      input,
+      select,
+      textarea {
+        font: inherit;
+      }
+
+      button {
+        cursor: pointer;
+      }
+
+      main {
+        display: grid;
+        gap: 1.4rem;
+        width: min(88rem, calc(100% - 2rem));
+        margin: 0 auto;
+        padding: 1.5rem 0 4rem;
+      }
+
+      .app-header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.8rem;
+      }
+
+      .brand {
+        margin: 0;
+        color: var(--text);
+        font-size: clamp(2.4rem, 5vw, 4.5rem);
+        font-weight: 780;
+        line-height: 0.95;
+        letter-spacing: 0;
+      }
+
+      .header-links {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 0.45rem;
+      }
+
+      .nav-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.42rem;
+        min-height: 2.35rem;
+        padding: 0 0.65rem;
+        border: 0;
+        color: var(--muted);
+        font-size: 0.9rem;
+        font-weight: 700;
+        text-decoration: none;
+        white-space: nowrap;
+      }
+
+      .nav-link:hover {
+        color: var(--text);
+      }
+
+      .nav-link svg {
+        width: 1.15rem;
+        height: 1.15rem;
+        stroke-width: 2;
+      }
+
+      .status {
+        min-height: 1.35rem;
+        color: var(--muted);
+        font-size: 0.9rem;
+        line-height: 1.45;
+      }
+
+      .workspace {
+        display: grid;
+        gap: 1.05rem;
+      }
+
+      code {
+        color: var(--accent);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      }
+
+      .generator-bar {
+        display: grid;
+        grid-template-columns: auto minmax(14rem, 1fr) auto auto auto;
+        align-items: center;
+        gap: 0.55rem;
+        min-height: 4.15rem;
+        padding: 0.65rem;
+        border: 1px solid rgba(33, 44, 67, 0.08);
+        border-radius: 999px;
+        background: var(--surface);
+        box-shadow: var(--shadow);
+      }
+
+      .file-picker,
+      .label-input,
+      .detail-select {
+        min-height: 2.7rem;
+        border: 0;
+        border-radius: 999px;
+        background: #f8fafc;
+        color: var(--text);
+      }
+
+      .file-picker {
+        display: inline-grid;
+        width: 2.7rem;
+        height: 2.7rem;
+        place-items: center;
+        border-color: #111827;
+        background: #111827;
+        color: #ffffff;
+        cursor: pointer;
+      }
+
+      .file-picker:hover {
+        background: #000000;
+      }
+
+      .file-picker svg {
+        width: 1.2rem;
+        height: 1.2rem;
+        stroke-width: 2.2;
+      }
+
+      .file-picker input {
+        position: absolute;
+        inline-size: 1px;
+        block-size: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        clip-path: inset(50%);
+        white-space: nowrap;
+      }
+
+      .label-input {
+        width: 100%;
+        min-width: 0;
+        background: transparent;
+        outline: none;
+        padding: 0 0.45rem;
+      }
+
+      .label-input::placeholder {
+        color: #98a2b3;
+      }
+
+      .detail-select {
+        padding: 0 2.25rem 0 1rem;
+      }
+
+      .icon-button {
+        display: inline-grid;
+        width: 2.7rem;
+        min-height: 2.7rem;
+        place-items: center;
+        border: 1px solid #111827;
+        border-radius: 999px;
+        background: #111827;
+        color: #ffffff;
+        padding: 0;
+      }
+
+      .icon-button:hover {
+        background: #000000;
+      }
+
+      .icon-button.secondary {
+        border-color: transparent;
+        background: transparent;
+        color: var(--muted);
+      }
+
+      .icon-button.secondary:hover {
+        color: var(--text);
+        background: #f8fafc;
+      }
+
+      .icon-button svg {
+        width: 1.1rem;
+        height: 1.1rem;
+        stroke-width: 2.4;
+      }
+
+      .model-stage {
+        --ascii-opacity-position: 50%;
+
+        position: relative;
+        width: 100%;
+        min-height: min(64vh, 46rem);
+        overflow: hidden;
+        border: 1px solid rgba(15, 23, 42, 0.14);
+        border-radius: 8px;
+        background:
+          linear-gradient(rgba(255, 255, 255, 0.055) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.055) 1px, transparent 1px),
+          radial-gradient(circle at 50% 45%, rgba(35, 103, 209, 0.22), transparent 35%),
+          var(--surface-strong);
+        background-size: 2.8rem 2.8rem, 2.8rem 2.8rem, auto, auto;
+        box-shadow: var(--soft-shadow);
+        aspect-ratio: 16 / 9;
+        isolation: isolate;
+      }
+
+      .model-stage::before {
+        position: absolute;
+        inset: 1rem;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 8px;
+        content: "";
+        pointer-events: none;
+      }
+
+      #model-canvas,
+      #ascii-backdrop,
+      #ascii-canvas,
+      #opacity-slider {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+
+      #model-canvas,
+      #ascii-canvas {
+        display: block;
+        background: transparent;
+      }
+
+      #ascii-backdrop {
+        z-index: 1;
+        background:
+          linear-gradient(rgba(255, 255, 255, 0.055) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.055) 1px, transparent 1px),
+          radial-gradient(circle at 50% 45%, rgba(35, 103, 209, 0.22), transparent 35%),
+          var(--surface-strong);
+        background-size: 2.8rem 2.8rem, 2.8rem 2.8rem, auto, auto;
+        opacity: 0.5;
+        pointer-events: none;
+      }
+
+      #ascii-canvas {
+        z-index: 2;
+        opacity: 0.5;
+        pointer-events: none;
+      }
+
+      .opacity-handle {
+        position: absolute;
+        inset-block: 0;
+        inset-inline-start: var(--ascii-opacity-position);
+        z-index: 3;
+        width: 0;
+        pointer-events: none;
+      }
+
+      .opacity-handle::before {
+        position: absolute;
+        inset-block: 1rem;
+        inset-inline-start: -1px;
+        width: 2px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.92);
+        box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.24), 0 0 1.4rem rgba(255, 255, 255, 0.52);
+        content: "";
+      }
+
+      .opacity-thumb {
+        position: absolute;
+        inset-block-start: 50%;
+        inset-inline-start: 0;
+        display: grid;
+        width: 3.4rem;
+        height: 3.4rem;
+        place-items: center;
+        border: 1px solid rgba(15, 23, 42, 0.18);
+        border-radius: 999px;
+        background: #ffffff;
+        box-shadow: 0 0.85rem 2rem rgba(0, 0, 0, 0.28);
+        color: var(--accent);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+        font-size: 1.05rem;
+        font-weight: 800;
+        transform: translate(-50%, -50%);
+      }
+
+      #opacity-slider {
+        z-index: 4;
+        opacity: 0;
+        cursor: ew-resize;
+      }
+
+      .stage-readout {
+        position: absolute;
+        inset-inline-start: 1rem;
+        inset-block-end: 1rem;
+        z-index: 5;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+        pointer-events: none;
+      }
+
+      .stage-pill {
+        min-height: 1.9rem;
+        padding: 0.38rem 0.6rem;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 999px;
+        background: rgba(17, 24, 39, 0.58);
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 0.76rem;
+        font-weight: 700;
+        backdrop-filter: blur(10px);
+      }
+
+      .html-box {
+        overflow: hidden;
+        border: 0;
+        border-radius: 8px;
+        background: var(--surface);
+        box-shadow: var(--shadow);
+      }
+
+      .html-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        min-height: 3.5rem;
+        padding: 0.5rem 0.75rem 0.5rem 1rem;
+        border-bottom: 0;
+      }
+
+      .output-title {
+        color: var(--muted);
+        font-size: 0.9rem;
+        font-weight: 700;
+      }
+
+      #output-code {
+        display: block;
+        width: 100%;
+        min-height: 13rem;
+        padding: 1rem;
+        border: 0;
+        background: transparent;
+        color: #253044;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+        font-size: 0.78rem;
+        line-height: 1.42;
+        outline: none;
+        overflow: auto;
+        white-space: pre;
+      }
+
+      .docs-panel {
+        display: grid;
+        grid-template-columns: minmax(12rem, 15rem) minmax(0, 54rem);
+        align-items: start;
+        justify-content: start;
+        gap: 2rem clamp(1.75rem, 4vw, 3.25rem);
+        width: 100%;
+        margin: 2.2rem 0 0;
+        padding-top: 1.4rem;
+      }
+
+      .docs-header {
+        display: grid;
+        grid-column: 2;
+        gap: 0.75rem;
+      }
+
+      .docs-header h2,
+      .docs-section h3,
+      .docs-section p {
+        margin: 0;
+      }
+
+      .docs-header h2 {
+        font-size: clamp(2.35rem, 5vw, 4rem);
+        line-height: 1.08;
+      }
+
+      .docs-lead,
+      .docs-section p,
+      .docs-section li {
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      .docs-lead {
+        max-width: 44rem;
+        font-size: 1.05rem;
+      }
+
+      .docs-contents {
+        display: grid;
+        position: sticky;
+        top: 1rem;
+        grid-column: 1;
+        grid-row: 1 / span 6;
+        gap: 0.35rem;
+        max-height: calc(100vh - 2rem);
+        overflow: auto;
+        padding-top: 0.25rem;
+      }
+
+      .docs-contents a {
+        width: 100%;
+        color: var(--muted);
+        line-height: 1.35;
+        text-decoration: none;
+      }
+
+      .docs-contents a:hover {
+        color: var(--accent);
+      }
+
+      .docs-section {
+        display: grid;
+        grid-column: 2;
+        gap: 0.75rem;
+        min-width: 0;
+      }
+
+      .docs-section h3 {
+        margin-top: 0.5rem;
+        font-size: 1.45rem;
+        line-height: 1.25;
+      }
+
+      .docs-panel pre {
+        position: relative;
+        margin: 0;
+        overflow: auto;
+        padding: 1rem;
+        border: 0;
+        border-radius: 8px;
+        background: var(--surface);
+        box-shadow: var(--shadow);
+        color: #253044;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+        font-size: 0.86rem;
+        line-height: 1.52;
+      }
+
+      .docs-section ul {
+        margin-block: 0;
+        padding-inline-start: 1.2rem;
+      }
+
+      .copied {
+        color: var(--success);
+      }
+
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+
+      @media (max-width: 980px) {
+        .docs-panel {
+          grid-template-columns: minmax(0, 52rem);
+          gap: 1.6rem;
+          width: min(52rem, 100%);
+        }
+
+        .docs-header,
+        .docs-contents,
+        .docs-section {
+          grid-column: 1;
+        }
+
+        .docs-contents {
+          position: static;
+          display: flex;
+          gap: 0.9rem;
+          overflow-x: auto;
+          overflow-y: hidden;
+          max-height: none;
+          padding-block: 0.25rem;
+          scrollbar-width: thin;
+        }
+
+        .docs-contents a {
+          flex: 0 0 auto;
+          width: auto;
+          white-space: nowrap;
+        }
+      }
+
+      @media (max-width: 820px) {
+        main {
+          width: min(100% - 1rem, 88rem);
+          padding-block: 1rem 3rem;
+        }
+
+        .app-header {
+          align-items: flex-start;
+        }
+
+        .header-links {
+          width: 100%;
+          justify-content: flex-start;
+        }
+
+        .generator-bar {
+          grid-template-columns: 1fr;
+          border-radius: 28px;
+        }
+
+        .file-picker,
+        .icon-button {
+          width: 100%;
+        }
+
+        .model-stage {
+          min-height: 22rem;
+        }
+
+        .docs-header h2 {
+          font-size: 2.35rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header class="app-header">
+        <h1 class="brand">Alto-3D</h1>
+        <nav class="header-links" aria-label="Project links">
+          <a class="nav-link" href="https://github.com/Mootbing/Alto-3D" aria-label="GitHub">
+            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.1-1.2-.3-2.5-1-3.5.3-1.2.3-2.4 0-3.5 0 0-1 0-3 1.5a12.3 12.3 0 0 0-8 0C6 2 5 2 5 2c-.3 1.1-.3 2.3 0 3.5A5.4 5.4 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.4.5-.7 1-.9 1.7-.2.6-.2 1.2-.1 1.8v4"></path>
+              <path d="M9 18c-4.5 2-5-2-7-2"></path>
+            </svg>
+          </a>
+          <a class="nav-link" href="https://www.npmjs.com/package/alto-3d-ascii">npm.js</a>
+        </nav>
+      </header>
+
+      <section class="workspace" aria-label="3D model ASCII playground">
+        <span class="status" id="conversion-status" aria-live="polite">Default torus model active.</span>
+
+        <div class="model-stage" id="model-stage">
+          <canvas id="model-canvas" data-alto-3d aria-label="3D model preview"></canvas>
+          <div id="ascii-backdrop" aria-hidden="true"></div>
+          <canvas id="ascii-canvas" aria-hidden="true"></canvas>
+          <div class="opacity-handle" id="opacity-handle">
+            <span class="opacity-thumb" aria-hidden="true">50</span>
+          </div>
+          <input id="opacity-slider" type="range" min="0" max="100" value="50" aria-label="ASCII opacity" />
+          <div class="stage-readout" aria-hidden="true">
+            <span class="stage-pill" id="model-output">procedural torus</span>
+            <span class="stage-pill" id="resolution-output">0x0</span>
+            <span class="stage-pill" id="opacity-output">ascii 50%</span>
+          </div>
+        </div>
+
+        <form class="generator-bar" id="generator-form">
+          <label class="file-picker" aria-label="Upload FBX">
+            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <path d="M17 8 12 3 7 8"></path>
+              <path d="M12 3v12"></path>
+            </svg>
+            <input id="model-upload" type="file" accept=".fbx,model/fbx,application/octet-stream" />
+          </label>
+          <input
+            class="label-input"
+            id="label-input"
+            type="text"
+            value="3D model preview"
+            aria-label="Model label"
+            placeholder="Model label"
+          />
+          <select class="detail-select" id="detail-select" aria-label="ASCII resolution">
+            <option value="0.25x">0.25x</option>
+            <option value="0.5x">0.5x</option>
+            <option value="0.75x">0.75x</option>
+            <option value="1x" selected>1x</option>
+            <option value="1.5x">1.5x</option>
+            <option value="2x">2x</option>
+            <option value="3x">3x</option>
+            <option value="4x">4x</option>
+          </select>
+          <button class="icon-button" type="submit" aria-label="Regenerate ASCII">
+            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12a9 9 0 1 1-2.64-6.36"></path>
+              <path d="M21 3v6h-6"></path>
+            </svg>
+          </button>
+          <button class="icon-button secondary" id="pause-toggle" type="button" aria-label="Pause animation">
+            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="6" y="4" width="4" height="16" rx="1"></rect>
+              <rect x="14" y="4" width="4" height="16" rx="1"></rect>
+            </svg>
+          </button>
+        </form>
+
+        <div class="html-box">
+          <div class="html-toolbar">
+            <span class="output-title">Canvas-to-ASCII wiring</span>
+            <button class="icon-button secondary" id="copy-output" type="button" aria-label="Copy output">
+              <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="8" y="8" width="12" height="12" rx="2"></rect>
+                <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"></path>
+              </svg>
+              <span class="sr-only">Copy output</span>
+            </button>
+          </div>
+          <pre id="output-code"></pre>
+        </div>
+      </section>
+
+      <section class="docs-panel" id="how-to-use-alto-3d" aria-labelledby="how-to-use-title">
+        <header class="docs-header">
+          <h2 id="how-to-use-title">How To Use Alto-3D</h2>
+          <p class="docs-lead">Render the model with Three.js, then sample that WebGL canvas into a transparent ASCII canvas.</p>
+        </header>
+
+        <nav class="docs-contents" aria-label="Documentation sections">
+          <a href="#install">Install</a>
+          <a href="#fbx-upload">FBX Upload</a>
+          <a href="#canvas-ascii">Canvas ASCII</a>
+          <a href="#fallbacks">Fallbacks</a>
+          <a href="#accessibility">Accessibility</a>
+        </nav>
+
+        <section class="docs-section" id="install">
+          <h3>Install</h3>
+          <pre><code>npm install alto-3d-ascii</code></pre>
+        </section>
+
+        <section class="docs-section" id="fbx-upload">
+          <h3>FBX Upload</h3>
+          <pre><code>import * as THREE from "three";
+import { FBXLoader } from "three/addons/loaders/FBXLoader.js";
+
+const file = input.files[0];
+const buffer = await file.arrayBuffer();
+const model = new FBXLoader().parse(buffer, "");
+scene.add(model);</code></pre>
+        </section>
+
+        <section class="docs-section" id="canvas-ascii">
+          <h3>Canvas ASCII</h3>
+          <pre><code>import { renderCanvasAsciiToCanvas } from "alto-3d-ascii";
+
+renderer.render(scene, camera);
+renderCanvasAsciiToCanvas(renderer.domElement, asciiCanvas, {
+  resolution: "1x",
+  color: "#f7fbff",
+  shadowBlur: 4
+});</code></pre>
+        </section>
+
+        <section class="docs-section" id="fallbacks">
+          <h3>Fallbacks</h3>
+          <pre><code>import { installAlto3D } from "alto-3d-ascii";
+import "alto-3d-ascii/style.css";
+
+installAlto3D();
+
+try {
+  await loadModel();
+} catch {
+  modelCanvas.dispatchEvent(new Event("alto3d:error"));
+}</code></pre>
+        </section>
+
+        <section class="docs-section" id="accessibility">
+          <h3>Accessibility</h3>
+          <ul>
+            <li>Keep the WebGL canvas label readable and human-oriented.</li>
+            <li>The ASCII canvas is visual only and uses <code>aria-hidden="true"</code>.</li>
+            <li>If a model fails entirely, Alto-3D can still replace the surface with its generated fallback.</li>
+          </ul>
+        </section>
+      </section>
+    </main>
+
+    <script type="module">
+      import * as THREE from "three";
+      import { FBXLoader } from "three/addons/loaders/FBXLoader.js";
+      import { renderCanvasAsciiToCanvas } from "./src/index.js";
+
+      const asciiCanvas = document.querySelector("#ascii-canvas");
+      const asciiBackdrop = document.querySelector("#ascii-backdrop");
+      const copyOutput = document.querySelector("#copy-output");
+      const detailSelect = document.querySelector("#detail-select");
+      const generatorForm = document.querySelector("#generator-form");
+      const labelInput = document.querySelector("#label-input");
+      const modelCanvas = document.querySelector("#model-canvas");
+      const modelOutput = document.querySelector("#model-output");
+      const modelStage = document.querySelector("#model-stage");
+      const modelUpload = document.querySelector("#model-upload");
+      const opacityOutput = document.querySelector("#opacity-output");
+      const opacitySlider = document.querySelector("#opacity-slider");
+      const outputCode = document.querySelector("#output-code");
+      const pauseToggle = document.querySelector("#pause-toggle");
+      const resolutionOutput = document.querySelector("#resolution-output");
+      const status = document.querySelector("#conversion-status");
+      const loader = new FBXLoader();
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(35, 16 / 9, 0.01, 100);
+      const renderer = new THREE.WebGLRenderer({
+        alpha: true,
+        antialias: true,
+        canvas: modelCanvas,
+        preserveDrawingBuffer: true
+      });
+      const modelRoot = new THREE.Group();
+      const scratchCanvas = document.createElement("canvas");
+      let activeModel = null;
+      let isPaused = false;
+      let lastAsciiTime = 0;
+      let currentOutput = "";
+
+      renderer.setClearColor(0x000000, 0);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      camera.position.set(0, 0.35, 5.2);
+      scene.add(modelRoot);
+      scene.add(new THREE.HemisphereLight(0xffffff, 0x283044, 2.4));
+
+      const keyLight = new THREE.DirectionalLight(0xffffff, 2.3);
+      keyLight.position.set(3, 4, 5);
+      scene.add(keyLight);
+
+      const rimLight = new THREE.DirectionalLight(0x76e4f7, 1.6);
+      rimLight.position.set(-4, 1.5, -3);
+      scene.add(rimLight);
+
+      function clamp(value, min, max) {
+        return Math.min(max, Math.max(min, value));
+      }
+
+      function escapeHtml(value) {
+        return String(value).replace(/[&<>"']/g, (character) => {
+          if (character === "&") {
+            return "&amp;";
+          }
+
+          if (character === "<") {
+            return "&lt;";
+          }
+
+          if (character === ">") {
+            return "&gt;";
+          }
+
+          if (character === "\"") {
+            return "&quot;";
+          }
+
+          return "&#39;";
+        });
+      }
+
+      function disposeObject(object) {
+        object.traverse?.((child) => {
+          child.geometry?.dispose?.();
+
+          if (Array.isArray(child.material)) {
+            child.material.forEach((material) => material.dispose?.());
+          } else {
+            child.material?.dispose?.();
+          }
+        });
+      }
+
+      function normalizeModel(object) {
+        const box = new THREE.Box3().setFromObject(object);
+        const size = box.getSize(new THREE.Vector3());
+        const center = box.getCenter(new THREE.Vector3());
+        const maxSize = Math.max(size.x, size.y, size.z, 0.001);
+
+        object.position.sub(center);
+        object.scale.multiplyScalar(2.5 / maxSize);
+
+        object.traverse((child) => {
+          if (!child.isMesh) {
+            return;
+          }
+
+          child.castShadow = true;
+          child.receiveShadow = true;
+
+          const materials = Array.isArray(child.material) ? child.material : [child.material].filter(Boolean);
+          materials.forEach((material) => {
+            material.side = THREE.DoubleSide;
+            material.needsUpdate = true;
+          });
+
+          if (!materials.length) {
+            child.material = new THREE.MeshStandardMaterial({
+              color: 0xf7fbff,
+              metalness: 0.12,
+              roughness: 0.72,
+              side: THREE.DoubleSide
+            });
+          }
+        });
+      }
+
+      function createDefaultModel() {
+        const geometry = new THREE.TorusKnotGeometry(1, 0.32, 180, 28);
+        const material = new THREE.MeshStandardMaterial({
+          color: 0xf7fbff,
+          emissive: 0x102a44,
+          metalness: 0.18,
+          roughness: 0.55
+        });
+        const mesh = new THREE.Mesh(geometry, material);
+
+        mesh.name = "procedural torus";
+        return mesh;
+      }
+
+      function setModel(object, name) {
+        if (activeModel) {
+          modelRoot.remove(activeModel);
+          disposeObject(activeModel);
+        }
+
+        activeModel = object;
+        normalizeModel(activeModel);
+        modelRoot.add(activeModel);
+        modelOutput.textContent = name;
+        labelInput.value = name === "procedural torus" ? "3D model preview" : name;
+        modelCanvas.setAttribute("aria-label", labelInput.value);
+        status.textContent = `${name} active.`;
+        updateOutput();
+      }
+
+      function resizeRenderer() {
+        const rect = modelStage.getBoundingClientRect();
+        const width = Math.max(320, Math.round(rect.width));
+        const height = Math.max(220, Math.round(rect.height));
+
+        renderer.setSize(width, height, false);
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+      }
+
+      function opacityValue() {
+        return Number((clamp(Number.parseFloat(opacitySlider.value) || 0, 0, 100) / 100).toFixed(2));
+      }
+
+      function setAsciiOpacity(value) {
+        const percent = clamp(Number.parseFloat(value) || 0, 0, 100);
+        const alpha = Number((percent / 100).toFixed(2));
+
+        modelStage.style.setProperty("--ascii-opacity-position", `${percent}%`);
+        asciiBackdrop.style.opacity = String(alpha);
+        asciiCanvas.style.opacity = String(alpha);
+        opacityOutput.textContent = `ascii ${Math.round(percent)}%`;
+        document.querySelector(".opacity-thumb").textContent = String(Math.round(percent));
+        updateOutput();
+      }
+
+      function drawAscii(now = performance.now()) {
+        if (now - lastAsciiTime < 1000 / 18) {
+          return;
+        }
+
+        const ascii = renderCanvasAsciiToCanvas(modelCanvas, asciiCanvas, {
+          color: "#f7fbff",
+          maxColumns: 260,
+          maxRows: 180,
+          resolution: detailSelect.value,
+          scratchCanvas,
+          shadowBlur: 4,
+          shadowColor: "rgba(118, 228, 247, 0.6)"
+        });
+        const firstLine = ascii.split("\n")[0] || "";
+
+        resolutionOutput.textContent = `${firstLine.length}x${ascii.split("\n").length}`;
+        lastAsciiTime = now;
+      }
+
+      function animate(now) {
+        requestAnimationFrame(animate);
+
+        if (!isPaused && activeModel) {
+          activeModel.rotation.y += 0.011;
+          activeModel.rotation.x = Math.sin(now * 0.0004) * 0.16;
+        }
+
+        renderer.render(scene, camera);
+        drawAscii(now);
+      }
+
+      async function loadFbx(file) {
+        if (!file) {
+          return;
+        }
+
+        status.textContent = `Loading ${file.name}...`;
+
+        try {
+          const buffer = await file.arrayBuffer();
+          const model = loader.parse(buffer, "");
+
+          model.name = file.name;
+          setModel(model, file.name.replace(/\.fbx$/i, ""));
+        } catch (error) {
+          console.error(error);
+          status.textContent = "FBX load failed.";
+          modelCanvas.dispatchEvent(new Event("alto3d:error"));
+        }
+      }
+
+      function buildOutput() {
+        return `import { renderCanvasAsciiToCanvas } from "alto-3d-ascii";
+import * as THREE from "three";
+import { FBXLoader } from "three/addons/loaders/FBXLoader.js";
+
+const renderer = new THREE.WebGLRenderer({
+  alpha: true,
+  canvas: modelCanvas,
+  preserveDrawingBuffer: true
+});
+
+const buffer = await file.arrayBuffer();
+const model = new FBXLoader().parse(buffer, "");
+scene.add(model);
+
+renderer.render(scene, camera);
+renderCanvasAsciiToCanvas(renderer.domElement, asciiCanvas, {
+  resolution: "${escapeHtml(detailSelect.value)}",
+  color: "#f7fbff"
+});
+
+asciiBackdrop.style.opacity = "${opacityValue().toFixed(2)}";
+asciiCanvas.style.opacity = "${opacityValue().toFixed(2)}";`;
+      }
+
+      function updateOutput() {
+        currentOutput = buildOutput();
+        outputCode.textContent = currentOutput;
+      }
+
+      function setPaused(nextPaused) {
+        isPaused = nextPaused;
+        pauseToggle.setAttribute("aria-label", isPaused ? "Resume animation" : "Pause animation");
+        pauseToggle.innerHTML = isPaused
+          ? `<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 4 20 12 6 20 6 4"></polygon></svg>`
+          : `<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16" rx="1"></rect><rect x="14" y="4" width="4" height="16" rx="1"></rect></svg>`;
+        status.textContent = isPaused ? "Animation paused." : `${modelOutput.textContent} active.`;
+      }
+
+      async function writeClipboard(value) {
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(value);
+          return;
+        }
+
+        const textarea = document.createElement("textarea");
+        textarea.value = value;
+        textarea.setAttribute("readonly", "");
+        textarea.style.position = "fixed";
+        textarea.style.insetBlockStart = "-100vh";
+        document.body.append(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        textarea.remove();
+      }
+
+      generatorForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        lastAsciiTime = 0;
+        updateOutput();
+        drawAscii();
+      });
+
+      labelInput.addEventListener("input", () => {
+        modelCanvas.setAttribute("aria-label", labelInput.value);
+      });
+
+      detailSelect.addEventListener("change", () => {
+        lastAsciiTime = 0;
+        updateOutput();
+        drawAscii();
+      });
+
+      modelUpload.addEventListener("change", () => {
+        loadFbx(modelUpload.files?.[0]);
+      });
+
+      opacitySlider.addEventListener("input", () => setAsciiOpacity(opacitySlider.value));
+      pauseToggle.addEventListener("click", () => setPaused(!isPaused));
+
+      copyOutput.addEventListener("click", async () => {
+        try {
+          await writeClipboard(currentOutput);
+          copyOutput.setAttribute("aria-label", "Copied output");
+          copyOutput.classList.add("copied");
+          window.setTimeout(() => {
+            copyOutput.setAttribute("aria-label", "Copy output");
+            copyOutput.classList.remove("copied");
+          }, 1400);
+        } catch {
+          copyOutput.setAttribute("aria-label", "Copy failed");
+        }
+      });
+
+      window.addEventListener("resize", () => {
+        resizeRenderer();
+        lastAsciiTime = 0;
+      });
+
+      resizeRenderer();
+      setAsciiOpacity(opacitySlider.value);
+      setModel(createDefaultModel(), "procedural torus");
+      requestAnimationFrame(animate);
+    </script>
+  </body>
+</html>

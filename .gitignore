@@ -1,0 +1,5 @@
+node_modules/
+npm-debug.log*
+*.tgz
+.DS_Store
+.alto-3d-server*.log
